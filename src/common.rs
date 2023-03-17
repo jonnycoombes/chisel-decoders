@@ -1,3 +1,4 @@
+//! Common types used throughout the rest of the crate
 use std::borrow::Cow;
 use std::fmt::{Debug, Display, Formatter};
 

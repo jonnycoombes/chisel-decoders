@@ -78,7 +78,7 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
         Utf8Decoder { input: r.bytes() }
     }
 
-    /// Attempt to advance over the next character in the underlying stream. Assumes the maximum
+    /// Attempt to decode the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
     pub fn decode_next(&mut self) -> DecoderResult<char> {
         let leading_byte = self.next_packed_byte()?;
