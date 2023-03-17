@@ -1,0 +1,13 @@
+[package]
+name = "chisel-decoders"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jonny Coombes <jcoombes@jcs-software.co.uk>"]
+rust-version = "1.56"
+description = "Simple and relatively fast UTF-8 byte stream decoder"
+license = "MIT OR Apache-2.0"
+keywords = ["utf8", "decoder"]
+categories = ["encoding", "text-processing"]
+repository = "https://github.com/jonnycoombes/chisel-decoder"
+
+[dependencies]
