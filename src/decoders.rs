@@ -1,5 +1,6 @@
 use std::borrow::Cow;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
+use std::io::Read;
 
 /// General result type used by a decoder instance
 pub type DecoderResult<T> = Result<T, DecoderError>;
@@ -43,7 +44,7 @@ macro_rules! decoder_error {
 }
 
 /// The very simple trait that should be implemented by any specific decoder
-pub trait Decoder {
+pub trait Decoder<'a, Reader : Read + Debug> {
 
     /// Attempt to decode the next available `char` from the underlying stream
     fn decode_next(&mut self) -> DecoderResult<char>;

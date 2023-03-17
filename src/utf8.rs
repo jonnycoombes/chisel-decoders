@@ -127,7 +127,7 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
     }
 }
 
-impl <'a, Reader: Read + Debug> Decoder for Utf8Decoder<'a, Reader> {
+impl <'a, Reader: Read + Debug> Decoder<'a, Reader> for Utf8Decoder<'a, Reader> {
     /// Attempt to decode the next UTF-8 character from the underlying byte stream
     fn decode_next(&mut self) -> DecoderResult<char> {
         self.next_char()
