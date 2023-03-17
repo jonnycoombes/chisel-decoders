@@ -5,12 +5,12 @@
 use std::fmt::{Debug, Formatter};
 use std::io::{Bytes, Read};
 use std::mem::transmute;
-use crate::decoders::*;
+use crate::common::*;
 use crate::decoder_error;
 
 /// Mask for extracting 7 bits from a single byte sequence
 const SINGLE_BYTE_MASK: u32 = 0b0111_1111;
-/// Mask for extracting initial 5 bits within a double byte UTF-8 ssequence
+/// Mask for extracting initial 5 bits within a double byte UTF-8 sequence
 const DOUBLE_BYTE_MASK: u32 = 0b0001_1111;
 /// Mask for extracting initial 4 bits within a triple byte UTF-8 ssequence
 const TRIPLE_BYTE_MASK: u32 = 0b0000_1111;
@@ -80,7 +80,7 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
 
     /// Attempt to advance over the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
-    fn next_char(&mut self) -> DecoderResult<char> {
+    pub fn decode_next(&mut self) -> DecoderResult<char> {
         let leading_byte = self.next_packed_byte()?;
         unsafe {
             if single_byte_sequence!(leading_byte) {
@@ -127,13 +127,6 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
     }
 }
 
-impl <'a, Reader: Read + Debug> Decoder<'a, Reader> for Utf8Decoder<'a, Reader> {
-    /// Attempt to decode the next UTF-8 character from the underlying byte stream
-    fn decode_next(&mut self) -> DecoderResult<char> {
-        self.next_char()
-    }
-}
-
 impl<'a, Reader: Read + Debug> Debug for Utf8Decoder<'a, Reader> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "rdr: {:?}", self.input)
@@ -144,7 +137,7 @@ impl<'a, Reader: Read + Debug> Iterator for Utf8Decoder<'a, Reader> {
     type Item = char;
     /// Get the next character from the stream
     fn next(&mut self) -> Option<Self::Item> {
-        match self.next_char() {
+        match self.decode_next() {
             Ok(c) => Some(c),
             Err(_) => None,
         }
