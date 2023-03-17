@@ -2,9 +2,9 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::time::Instant;
-use crate::decoders::Decoder;
+use crate::decoders::{Decoder, DecoderErrorCode};
 
-use crate::utf8::{Utf8Decoder, DecoderErrorCode};
+use crate::utf8::{Utf8Decoder};
 
 #[test]
 fn can_create_from_array() {
