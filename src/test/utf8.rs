@@ -10,7 +10,7 @@ use crate::utf8::{Utf8Decoder};
 fn can_create_from_array() {
     let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
     let mut reader = BufReader::new(buffer);
-    let _stream = Utf8Decoder::new(&mut reader);
+    let _decoder = Utf8Decoder::new(&mut reader);
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn can_create_from_file() {
         .join("src/test/fixtures/samples/utf-8/fuzz.txt");
     let f = File::open(path);
     let mut reader = BufReader::new(f.unwrap());
-    let _stream = Utf8Decoder::new(&mut reader);
+    let _decoder = Utf8Decoder::new(&mut reader);
 }
 
 #[test]
@@ -30,9 +30,9 @@ fn pass_a_fuzz_test() {
         .join("src/test/fixtures/samples/utf-8/fuzz.txt");
     let f = File::open(path);
     let mut reader = BufReader::new(f.unwrap());
-    let mut stream = Utf8Decoder::new(&mut reader);
+    let mut decoder = Utf8Decoder::new(&mut reader);
     let start = Instant::now();
-    while stream.decode_next().is_ok() {}
+    while decoder.decode_next().is_ok() {}
     println!("Consumed all UTF-8 in {:?}", start.elapsed());
 }
 
@@ -43,9 +43,9 @@ fn process_a_simple_file() {
         .join("src/test/fixtures/samples/json/simple_structure.json");
     let f = File::open(path);
     let mut reader = BufReader::new(f.unwrap());
-    let mut stream = Utf8Decoder::new(&mut reader);
+    let mut decoder = Utf8Decoder::new(&mut reader);
     let start = Instant::now();
-    while stream.decode_next().is_ok() {}
+    while decoder.decode_next().is_ok() {}
     println!("Consumed all UTF-8 in {:?}", start.elapsed());
 }
 
@@ -56,9 +56,9 @@ fn process_a_complex_file() {
         .join("src/test/fixtures/samples/json/twitter.json");
     let f = File::open(path);
     let mut reader = BufReader::new(f.unwrap());
-    let mut stream = Utf8Decoder::new(&mut reader);
+    let mut decoder = Utf8Decoder::new(&mut reader);
     let start = Instant::now();
-    while stream.decode_next().is_ok() {}
+    while decoder.decode_next().is_ok() {}
     println!("Consumed all UTF-8 in {:?}", start.elapsed());
 }
 
@@ -69,10 +69,10 @@ fn process_a_large_file() {
         .join("src/test/fixtures/samples/json/events.json");
     let f = File::open(path);
     let mut reader = BufReader::with_capacity(4096, f.unwrap());
-    let mut stream = Utf8Decoder::new(&mut reader);
+    let mut decoder = Utf8Decoder::new(&mut reader);
     let start = Instant::now();
     loop {
-        let result = stream.decode_next();
+        let result = decoder.decode_next();
         if result.is_err() {
             break;
         }
@@ -84,8 +84,8 @@ fn process_a_large_file() {
 fn should_correctly_decode_utf8_characters() {
     let buffer: &[u8] = "ह".as_bytes();
     let mut reader = BufReader::new(buffer);
-    let mut stream = Utf8Decoder::new(&mut reader);
-    let char = stream.next().unwrap();
+    let mut decoder = Utf8Decoder::new(&mut reader);
+    let char = decoder.next().unwrap();
     assert_eq!(char, 'ह')
 }
 
@@ -95,10 +95,10 @@ fn should_be_an_iterator() {
         .unwrap()
         .join("src/test/fixtures/samples/json/events.json");
     let f = File::open(path);
-    let mut reader = BufReader::with_capacity(4096, f.unwrap());
-    let stream = Utf8Decoder::new(&mut reader);
+    let mut reader = BufReader::new( f.unwrap());
+    let decoder = Utf8Decoder::new(&mut reader);
     let start = Instant::now();
-    for _c in stream {}
+    for _c in decoder {}
     println!("Consumed all UTF-8 in {:?}", start.elapsed());
 }
 
@@ -108,10 +108,10 @@ fn should_produce_eof_markers() {
         .unwrap()
         .join("src/test/fixtures/samples/json/events.json");
     let f = File::open(path);
-    let mut reader = BufReader::with_capacity(16384, f.unwrap());
-    let mut stream = Utf8Decoder::new(&mut reader);
+    let mut reader = BufReader::new( f.unwrap());
+    let mut decoder = Utf8Decoder::new(&mut reader);
     loop {
-        let result = stream.decode_next();
+        let result = decoder.decode_next();
         match result {
             Ok(_) => {}
             Err(err) => {

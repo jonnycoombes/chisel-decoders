@@ -30,7 +30,7 @@ Just wrap your array in a reader, and then plug it into a new instance of `Utf8D
 
 ### Create from a file 
 
-Just crack open your file, wrap in a `Read` instance and then plug into a new instance of `CharStream`:
+Just crack open your file, wrap in a `Read` instance and then plug into a new instance of `Utf8Decoder`:
 
 ```rust
     let path = PathBuf::from("somefile.txt");
@@ -40,7 +40,7 @@ Just crack open your file, wrap in a `Read` instance and then plug into a new in
 ```
 ### Consuming `char`s
 
-You can either pull out new `char`s from the reader wrapped inside a `Result` type:
+You can either pull out new `char`s from the decoder wrapped inside a `Result` type:
 
 ```rust
     loop {
@@ -53,8 +53,8 @@ You can either pull out new `char`s from the reader wrapped inside a `Result` ty
 Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
 
 ```rust
-    let stream = Utf8Decoder::new(&mut reader);
-    for c in stream {
+    let decoder = Utf8Decoder::new(&mut reader);
+    for c in decoder {
         match c {
             Some(c) => ...
             None => ...

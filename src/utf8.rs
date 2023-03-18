@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 #![allow(clippy::transmute_int_to_char)]
-//! A character-oriented transcoder implementation that will take an underlying [std::u8] (byte) source
+//! A character-oriented decoder implementation that will take an underlying [std::u8] (byte) source
 //! and produce a stream of decoded Unicode (UTF-8) characters
 use std::fmt::{Debug, Formatter};
 use std::io::{Bytes, Read};
@@ -65,15 +65,15 @@ fn decode_quad(a: u32, b: u32, c: u32, d: u32) -> u32 {
         | ((a & QUAD_BYTE_MASK) << 18)
 }
 
-/// A character stream, which is wrapped around a given [Read] instance.
-/// The lifetime of the reader instance must be at least as long as the character stream
+/// A UTF-8 decoder, which is wrapped around a given [Read] instance.
+/// The lifetime of the reader instance must be at least as long as the decoder
 pub struct Utf8Decoder<'a, Reader: Read + Debug> {
     /// The input stream
     input: Bytes<&'a mut Reader>,
 }
 
 impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
-    /// Create a new character stream with a default buffer size
+    /// Create a new decoder with a default buffer size
     pub fn new(r: &'a mut Reader) -> Self {
         Utf8Decoder { input: r.bytes() }
     }
@@ -114,7 +114,7 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
         )
     }
 
-    /// Attempt to read a single byte from the input
+    /// Attempt to read a single byte from the underlying stream
     #[inline(always)]
     fn next_packed_byte(&mut self) -> DecoderResult<u32> {
         match self.input.next() {
@@ -135,7 +135,7 @@ impl<'a, Reader: Read + Debug> Debug for Utf8Decoder<'a, Reader> {
 
 impl<'a, Reader: Read + Debug> Iterator for Utf8Decoder<'a, Reader> {
     type Item = char;
-    /// Get the next character from the stream
+    /// Decode the next character from the underlying stream
     fn next(&mut self) -> Option<Self::Item> {
         match self.decode_next() {
             Ok(c) => Some(c),

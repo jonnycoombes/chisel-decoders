@@ -16,7 +16,7 @@ pub enum DecoderErrorCode {
     EndOfInput,
 }
 
-/// Structure for encoding errors reported back a stream instance
+/// Structure for encoding errors
 #[derive(Debug, Clone)]
 pub struct DecoderError {
     /// The error code
