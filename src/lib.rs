@@ -19,6 +19,9 @@
 //! Just wrap your array in a reader, and then plug it into a new instance of `Utf8Decoder`:
 //!
 //! ```rust
+//!     # use std::io::BufReader;
+//!     # use chisel_decoders::utf8::Utf8Decoder;
+//!
 //!     let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
 //!     let mut reader = BufReader::new(buffer);
 //!     let _decoder = Utf8Decoder::new(&mut reader);
@@ -29,6 +32,11 @@
 //! Just crack open your file, wrap in a `Read` instance and then plug into a new instance of `Utf8Decoder`:
 //!
 //! ```rust
+//!     # use std::fs::File;
+//!     # use std::io::BufReader;
+//!     # use std::path::PathBuf;
+//!     # use chisel_decoders::utf8::Utf8Decoder;
+//!
 //!     let path = PathBuf::from("somefile.txt");
 //!     let f = File::open(path);
 //!     let mut reader = BufReader::new(f.unwrap());
@@ -49,6 +57,7 @@
 //! Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
 //!
 //! ```rust
+//!     # use chisel_decoders::utf8::Utf8Decoder;
 //!     let decoder = Utf8Decoder::new(&mut reader);
 //!     for c in decoder {
 //!         match c {
@@ -60,6 +69,3 @@
 //!
 pub mod common;
 pub mod utf8;
-
-#[cfg(test)]
-mod test;

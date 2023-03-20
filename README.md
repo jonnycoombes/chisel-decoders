@@ -61,3 +61,7 @@ Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
         }       
     }
 ```
+## Building and Testing
+
+As you would expect, just `cargo build` in order to build the crate.  In order to run tests without doc examples 
+screwing things up, make sure that you run qualified tests with `cargo test --test` or similar in order to skip examples.
