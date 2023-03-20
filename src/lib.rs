@@ -71,7 +71,7 @@
 //!     # use std::path::PathBuf;
 //!     # use chisel_decoders::utf8::Utf8Decoder;
 //!
-//!     let path = PathBuf::from("/usr/share/dict/words");
+//!     let path = PathBuf::from("./Cargo.toml");
 //!     let f = File::open(path);
 //!     let mut reader = BufReader::new(f.unwrap());
 //!     let mut decoder = Utf8Decoder::new(&mut reader);
