@@ -10,7 +10,7 @@
 //! There is minimal checking (other than bit-masking) of the inbound bytes - it is not intended to be a full-blown UTF8
 //! validation library, although improved/feature-flagged validation may be added at a later date.
 //!
-//! ## Usage
+//! ### Usage
 //!
 //! Usage is very simple, provided you have something that implements `Read` in order to source some bytes:
 //!
