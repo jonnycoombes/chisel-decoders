@@ -37,7 +37,7 @@
 //!     # use std::path::PathBuf;
 //!     # use chisel_decoders::utf8::Utf8Decoder;
 //!
-//!     let path = PathBuf::from("somefile.txt");
+//!     let path = PathBuf::from("./Cargo.toml");
 //!     let f = File::open(path);
 //!     let mut reader = BufReader::new(f.unwrap());
 //!     let _decoder = Utf8Decoder::new(&mut reader);
@@ -47,6 +47,15 @@
 //! You can either pull out new `char`s from the decoder wrapped inside a `Result` type:
 //!
 //! ```rust
+//!     # use std::fs::File;
+//!     # use std::io::BufReader;
+//!     # use std::path::PathBuf;
+//!     # use chisel_decoders::utf8::Utf8Decoder;
+//!
+//!     let path = PathBuf::from("./Cargo.toml");
+//!     let f = File::open(path);
+//!     let mut reader = BufReader::new(f.unwrap());
+//!     let mut decoder = Utf8Decoder::new(&mut reader);
 //!     loop {
 //!         let result = decoder.decode_next();
 //!         if result.is_err() {
@@ -57,13 +66,17 @@
 //! Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
 //!
 //! ```rust
+//!     # use std::fs::File;
+//!     # use std::io::BufReader;
+//!     # use std::path::PathBuf;
 //!     # use chisel_decoders::utf8::Utf8Decoder;
-//!     let decoder = Utf8Decoder::new(&mut reader);
+//!
+//!     let path = PathBuf::from("/usr/share/dict/words");
+//!     let f = File::open(path);
+//!     let mut reader = BufReader::new(f.unwrap());
+//!     let mut decoder = Utf8Decoder::new(&mut reader);
 //!     for c in decoder {
-//!         match c {
-//!             Some(c) => ...
-//!             None => ...
-//!         }
+//!        println!("char: {}", c)
 //!     }
 //! ```
 //!
