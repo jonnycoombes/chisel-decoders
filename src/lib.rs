@@ -1,6 +1,6 @@
 //! ## Overview
 //!
-//! This repository contains a very simple, lean implementation of a decoder that will consume `u8` bytes from a given
+//! This crate contains a very simple, lean implementation of a decoder that will consume `u8` bytes from a given
 //! `Read` implementation, and decode into the Rust internal `char` type using UTF-8 . This is an offshoot lib from an
 //! ongoing toy parser project, and is used as the first stage of the scanning/lexing phase of the parser in order avoid
 //! unnecessary allocations during the `u8` sequence -> `char` conversion.
