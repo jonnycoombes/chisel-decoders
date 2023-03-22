@@ -27,8 +27,8 @@
      use chisel_decoders::utf8::Utf8Decoder;
 
      let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
-     let mut reader = BufReader::new(buffer);
-     let _decoder = Utf8Decoder::new(&mut reader);
+     let reader = BufReader::new(buffer);
+     let _decoder = Utf8Decoder::new(reader);
  ```
 
  ### Create from a file
@@ -43,8 +43,8 @@
 
      let path = PathBuf::from("./Cargo.toml");
      let f = File::open(path);
-     let mut reader = BufReader::new(f.unwrap());
-     let _decoder = Utf8Decoder::new(&mut reader);
+     let reader = BufReader::new(f.unwrap());
+     let _decoder = Utf8Decoder::new(reader);
  ```
  ### Consuming `char`s
 
@@ -58,8 +58,8 @@
 
      let path = PathBuf::from("./Cargo.toml");
      let f = File::open(path);
-     let mut reader = BufReader::new(f.unwrap());
-     let mut decoder = Utf8Decoder::new(&mut reader);
+     let reader = BufReader::new(f.unwrap());
+     let mut decoder = Utf8Decoder::new(reader);
      loop {
          let result = decoder.decode_next();
          if result.is_err() {
@@ -77,8 +77,8 @@
 
      let path = PathBuf::from("./Cargo.toml");
      let f = File::open(path);
-     let mut reader = BufReader::new(f.unwrap());
-     let mut decoder = Utf8Decoder::new(&mut reader);
+     let reader = BufReader::new(f.unwrap());
+     let mut decoder = Utf8Decoder::new(reader);
      for c in decoder {
         println!("char: {}", c)
      }
