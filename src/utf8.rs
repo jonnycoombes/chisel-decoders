@@ -2,6 +2,7 @@
 #![allow(clippy::transmute_int_to_char)]
 //! A character-oriented decoder implementation that will take an underlying [std::u8] (byte) source
 //! and produce a stream of decoded Unicode (UTF-8) characters
+use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::io::{Bytes, Read};
 use std::mem::transmute;
@@ -69,18 +70,18 @@ fn decode_quad(a: u32, b: u32, c: u32, d: u32) -> u32 {
 /// The lifetime of the reader instance must be at least as long as the decoder
 pub struct Utf8Decoder<Reader: Read + Debug> {
     /// The input stream
-    input: Bytes<Reader>,
+    input: RefCell<Bytes<Reader>>,
 }
 
 impl<Reader: Read + Debug> Utf8Decoder<Reader> {
     /// Create a new decoder with a default buffer size
     pub fn new(r: Reader) -> Self {
-        Utf8Decoder { input: r.bytes() }
+        Utf8Decoder { input: RefCell::new(r.bytes()) }
     }
 
     /// Attempt to decode the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
-    pub fn decode_next(&mut self) -> DecoderResult<char> {
+    pub fn decode_next(&self) -> DecoderResult<char> {
         let leading_byte = self.next_packed_byte()?;
         unsafe {
             if single_byte_sequence!(leading_byte) {
@@ -116,8 +117,8 @@ impl<Reader: Read + Debug> Utf8Decoder<Reader> {
 
     /// Attempt to read a single byte from the underlying stream
     #[inline(always)]
-    fn next_packed_byte(&mut self) -> DecoderResult<u32> {
-        match self.input.next() {
+    fn next_packed_byte(&self) -> DecoderResult<u32> {
+        match self.input.borrow_mut().next() {
             Some(result) => match result {
                 Ok(b) => Ok(b as u32),
                 Err(_) => decoder_error!(DecoderErrorCode::StreamFailure, "failed to read next byte"),

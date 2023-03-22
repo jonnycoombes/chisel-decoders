@@ -26,7 +26,7 @@ fn can_create_from_file() {
 #[test]
 fn pass_a_fuzz_test() {
     let reader = BufReader::new(fuzz_file());
-    let mut decoder = Utf8Decoder::new(reader);
+    let decoder = Utf8Decoder::new(reader);
     let mut count = 0;
     while decoder.decode_next().is_ok() { count+= 1 }
     assert_eq!(count, 35283)
