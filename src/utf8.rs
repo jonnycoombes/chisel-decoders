@@ -67,14 +67,14 @@ fn decode_quad(a: u32, b: u32, c: u32, d: u32) -> u32 {
 
 /// A UTF-8 decoder, which is wrapped around a given [Read] instance.
 /// The lifetime of the reader instance must be at least as long as the decoder
-pub struct Utf8Decoder<'a, Reader: Read + Debug> {
+pub struct Utf8Decoder<Reader: Read + Debug> {
     /// The input stream
-    input: Bytes<&'a mut Reader>,
+    input: Bytes<Reader>,
 }
 
-impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
+impl<Reader: Read + Debug> Utf8Decoder<Reader> {
     /// Create a new decoder with a default buffer size
-    pub fn new(r: &'a mut Reader) -> Self {
+    pub fn new(r: Reader) -> Self {
         Utf8Decoder { input: r.bytes() }
     }
 
@@ -127,13 +127,13 @@ impl<'a, Reader: Read + Debug> Utf8Decoder<'a, Reader> {
     }
 }
 
-impl<'a, Reader: Read + Debug> Debug for Utf8Decoder<'a, Reader> {
+impl<Reader: Read + Debug> Debug for Utf8Decoder<Reader> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "rdr: {:?}", self.input)
     }
 }
 
-impl<'a, Reader: Read + Debug> Iterator for Utf8Decoder<'a, Reader> {
+impl<Reader: Read + Debug> Iterator for Utf8Decoder<Reader> {
     type Item = char;
     /// Decode the next character from the underlying stream
     fn next(&mut self) -> Option<Self::Item> {
