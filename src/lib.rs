@@ -55,7 +55,7 @@
 //!     let path = PathBuf::from("./Cargo.toml");
 //!     let f = File::open(path);
 //!     let reader = BufReader::new(f.unwrap());
-//!     let mut decoder = Utf8Decoder::new(reader);
+//!     let decoder = Utf8Decoder::new(reader);
 //!     loop {
 //!         let result = decoder.decode_next();
 //!         if result.is_err() {
@@ -74,7 +74,7 @@
 //!     let path = PathBuf::from("./Cargo.toml");
 //!     let f = File::open(path);
 //!     let reader = BufReader::new(f.unwrap());
-//!     let mut decoder = Utf8Decoder::new(reader);
+//!     let decoder = Utf8Decoder::new(reader);
 //!     for c in decoder {
 //!        println!("char: {}", c)
 //!     }
