@@ -2,6 +2,8 @@
 
 [![Rust](https://github.com/jonnycoombes/chisel-decoders/actions/workflows/rust.yml/badge.svg)](https://github.com/jonnycoombes/chisel-decoders/actions/workflows/rust.yml)
 
+[![crates.io](https://img.shields.io/crates/v/chisel-decoders.svg)](https://crates.io/crates/chisel-decoders)
+
  ## Overview
 
  This repository contains a very simple, lean implementation of a decoder that will consume `u8` bytes from a given
