@@ -3,7 +3,6 @@
 //! A character-oriented decoder implementation that will take an underlying [std::u8] (byte) source
 //! and produce a stream of decoded Unicode (UTF-8) characters
 use std::cell::RefCell;
-use std::fmt::{Debug, Formatter};
 use std::io::{Bytes, Read};
 use std::mem::transmute;
 use crate::common::*;
@@ -68,12 +67,12 @@ fn decode_quad(a: u32, b: u32, c: u32, d: u32) -> u32 {
 
 /// A UTF-8 decoder, which is wrapped around a given [Read] instance.
 /// The lifetime of the reader instance must be at least as long as the decoder
-pub struct Utf8Decoder<Reader: Read + Debug> {
+pub struct Utf8Decoder<Reader: Read> {
     /// The input stream
     input: RefCell<Bytes<Reader>>,
 }
 
-impl<Reader: Read + Debug> Utf8Decoder<Reader> {
+impl<Reader: Read> Utf8Decoder<Reader> {
     /// Create a new decoder with a default buffer size
     pub fn new(r: Reader) -> Self {
         Utf8Decoder { input: RefCell::new(r.bytes()) }
@@ -128,13 +127,7 @@ impl<Reader: Read + Debug> Utf8Decoder<Reader> {
     }
 }
 
-impl<Reader: Read + Debug> Debug for Utf8Decoder<Reader> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "rdr: {:?}", self.input)
-    }
-}
-
-impl<Reader: Read + Debug> Iterator for Utf8Decoder<Reader> {
+impl<Reader: Read> Iterator for Utf8Decoder<Reader> {
     type Item = char;
     /// Decode the next character from the underlying stream
     fn next(&mut self) -> Option<Self::Item> {
@@ -142,5 +135,50 @@ impl<Reader: Read + Debug> Iterator for Utf8Decoder<Reader> {
             Ok(c) => Some(c),
             Err(_) => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::env;
+    use std::fs::File;
+    use std::io::BufReader;
+    use crate::utf8::Utf8Decoder;
+
+    fn fuzz_file() -> File {
+        let path = env::current_dir()
+            .unwrap()
+            .join("fixtures/fuzz.txt");
+        File::open(path).unwrap()
+    }
+
+    #[test]
+    fn can_create_from_array() {
+        let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
+        let reader = BufReader::new(buffer);
+        let _decoder = Utf8Decoder::new(reader);
+    }
+
+    #[test]
+    fn can_create_from_file() {
+        let reader = BufReader::new(fuzz_file());
+        let _decoder = Utf8Decoder::new(reader);
+    }
+
+    #[test]
+    fn pass_a_fuzz_test() {
+        let reader = BufReader::new(fuzz_file());
+        let decoder = Utf8Decoder::new(reader);
+        let mut count = 0;
+        while decoder.decode_next().is_ok() { count+= 1 }
+        assert_eq!(count, 35283)
+    }
+
+    #[test]
+    fn should_be_an_iterator() {
+        let reader = BufReader::new( fuzz_file());
+        let decoder = Utf8Decoder::new(reader);
+        assert_eq!(decoder.count(), 35283);
     }
 }
