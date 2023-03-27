@@ -11,3 +11,12 @@ categories = ["encoding", "text-processing"]
 repository = "https://github.com/jonnycoombes/chisel-decoders"
 
 [dependencies]
+
+[dev-dependencies]
+criterion = "0.4.0"
+
+[[bench]]
+name = "micro"
+harness = false
+
+[features]
