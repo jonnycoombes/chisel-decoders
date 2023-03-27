@@ -6,8 +6,8 @@ use std::cell::RefCell;
 use std::io::BufRead;
 use std::mem::transmute;
 
+use crate::{end_of_input, invalid_byte_sequence};
 use crate::common::*;
-use crate::{ end_of_input, invalid_byte_sequence};
 use crate::utf8::SequenceType::Unrecognised;
 
 enum SequenceType {
@@ -124,36 +124,24 @@ impl<B: BufRead> Utf8Decoder<B> {
                         unsafe { Ok(transmute(buffer[0] as u32)) }
                     }
                     SequenceType::Pair => {
-                        let count = input.read(&mut buffer[1..2])
+                        input.read_exact(&mut buffer[1..2])
                             .expect("failed to read sequence suffix");
-                        if count == 1 {
-                            unsafe {
-                                Ok(transmute(decode_pair!(&buffer[0..2])))
-                            }
-                        }else{
-                            end_of_input!()
+                        unsafe {
+                            Ok(transmute(decode_pair!(&buffer[0..2])))
                         }
                     }
                     SequenceType::Triple => {
-                        let count = input.read(&mut buffer[1..3])
+                        input.read_exact(&mut buffer[1..3])
                             .expect("failed to read sequence suffix");
-                        if count == 2 {
-                            unsafe {
-                                Ok(transmute(decode_triple!(&buffer[0..3])))
-                            }
-                        } else {
-                            end_of_input!()
+                        unsafe {
+                            Ok(transmute(decode_triple!(&buffer[0..3])))
                         }
                     }
                     SequenceType::Quad => {
-                        let count = input.read(&mut buffer[1..4])
+                        input.read_exact(&mut buffer[1..4])
                             .expect("failed to read sequence suffix");
-                        if count == 3 {
-                            unsafe {
-                                Ok(transmute(decode_quad!(&buffer[0..4])))
-                            }
-                        } else {
-                           end_of_input!()
+                        unsafe {
+                            Ok(transmute(decode_quad!(&buffer[0..4])))
                         }
                     }
                     Unrecognised => {
@@ -189,6 +177,8 @@ mod tests {
         File::open("fixtures/fuzz.txt").unwrap()
     }
 
+    fn complex_file() -> File { File::open("fixtures/twitter.json").unwrap() }
+
     #[test]
     fn can_create_from_array() {
         let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
@@ -213,6 +203,15 @@ mod tests {
         while decoder.decode_next().is_ok() { count += 1; }
         assert_eq!(count, 35283);
         println!("Decoded fuzz file in {:?}", start.elapsed());
+    }
+
+    #[test]
+    fn decode_a_complex_document() {
+        let reader = BufReader::new(complex_file());
+        let decoder = Utf8Decoder::new(reader);
+        let mut count = 0;
+        while decoder.decode_next().is_ok() { count += 1; }
+        assert_eq!(count, 567916);
     }
 
     #[test]
