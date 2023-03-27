@@ -3,10 +3,20 @@
 //! A character-oriented decoder implementation that will take an underlying [std::u8] (byte) source
 //! and produce a stream of decoded Unicode (UTF-8) characters
 use std::cell::RefCell;
-use std::io::{Bytes, Read};
+use std::io::BufRead;
 use std::mem::transmute;
+
 use crate::common::*;
-use crate::decoder_error;
+use crate::{ end_of_input, invalid_byte_sequence};
+use crate::utf8::SequenceType::Unrecognised;
+
+enum SequenceType {
+    Single,
+    Pair,
+    Triple,
+    Quad,
+    Unrecognised,
+}
 
 /// Mask for extracting 7 bits from a single byte sequence
 const SINGLE_BYTE_MASK: u32 = 0b0111_1111;
@@ -47,87 +57,116 @@ macro_rules! quad_byte_sequence {
     };
 }
 
-#[inline(always)]
-fn decode_double(a: u32, b: u32) -> u32 {
-    (b & FOLLOWING_BYTE_MASK) | ((a & DOUBLE_BYTE_MASK) << 6)
+macro_rules! decode_pair {
+    ($buf : expr) => {
+        ($buf[1] as u32 & FOLLOWING_BYTE_MASK)
+        | (($buf[0] as u32 & DOUBLE_BYTE_MASK) << 6)
+    }
 }
 
-#[inline(always)]
-fn decode_triple(a: u32, b: u32, c: u32) -> u32 {
-    (c & FOLLOWING_BYTE_MASK) | ((b & FOLLOWING_BYTE_MASK) << 6) | ((a & TRIPLE_BYTE_MASK) << 12)
+macro_rules! decode_triple {
+    ($buf : expr) => {
+        ($buf[2] as u32 & FOLLOWING_BYTE_MASK)
+        | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 6)
+        | (($buf[0] as u32 & TRIPLE_BYTE_MASK) << 12)
+    }
 }
 
+macro_rules! decode_quad {
+    ($buf : expr) => {
+        ($buf[3] as u32 & FOLLOWING_BYTE_MASK)
+        | (($buf[2] as u32 & FOLLOWING_BYTE_MASK) << 6)
+        | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 12)
+        | (($buf[0] as u32 & QUAD_BYTE_MASK) << 18)
+    }
+}
+
+/// Determine what kind of UTF-8 sequence we're dealing with
 #[inline(always)]
-fn decode_quad(a: u32, b: u32, c: u32, d: u32) -> u32 {
-    (d & FOLLOWING_BYTE_MASK)
-        | ((c & FOLLOWING_BYTE_MASK) << 6)
-        | ((b & FOLLOWING_BYTE_MASK) << 12)
-        | ((a & QUAD_BYTE_MASK) << 18)
+fn sequence_type(b: u8) -> SequenceType {
+    if single_byte_sequence!(b) {
+        SequenceType::Single
+    } else if double_byte_sequence!(b) {
+        SequenceType::Pair
+    } else if triple_byte_sequence!(b) {
+        SequenceType::Triple
+    } else if quad_byte_sequence!(b) {
+        SequenceType::Quad
+    } else {
+        Unrecognised
+    }
 }
 
 /// A UTF-8 decoder, which is wrapped around a given [Read] instance.
 /// The lifetime of the reader instance must be at least as long as the decoder
-pub struct Utf8Decoder<Reader: Read> {
+pub struct Utf8Decoder<B: BufRead> {
     /// The input stream
-    input: RefCell<Bytes<Reader>>,
+    input: RefCell<B>,
 }
 
-impl<Reader: Read> Utf8Decoder<Reader> {
+impl<B: BufRead> Utf8Decoder<B> {
     /// Create a new decoder with a default buffer size
-    pub fn new(r: Reader) -> Self {
-        Utf8Decoder { input: RefCell::new(r.bytes()) }
+    pub fn new(r: B) -> Self {
+        Utf8Decoder { input: RefCell::new(r) }
     }
 
     /// Attempt to decode the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
     pub fn decode_next(&self) -> DecoderResult<char> {
-        let leading_byte = self.next_packed_byte()?;
-        unsafe {
-            if single_byte_sequence!(leading_byte) {
-                return Ok(transmute(leading_byte));
-            }
-            if double_byte_sequence!(leading_byte) {
-                return Ok(transmute(decode_double(
-                    leading_byte,
-                    self.next_packed_byte()?,
-                )));
-            }
-            if triple_byte_sequence!(leading_byte) {
-                return Ok(transmute(decode_triple(
-                    leading_byte,
-                    self.next_packed_byte()?,
-                    self.next_packed_byte()?,
-                )));
-            }
-            if quad_byte_sequence!(leading_byte) {
-                return Ok(transmute(decode_quad(
-                    leading_byte,
-                    self.next_packed_byte()?,
-                    self.next_packed_byte()?,
-                    self.next_packed_byte()?,
-                )));
-            }
+        let mut buffer: [u8; 4] = [0; 4];
+        let mut input = self.input.borrow_mut();
+        if let Ok(count) = input.read(&mut buffer[0..1]) {
+            return if count != 1 {
+                end_of_input!()
+            } else {
+                match sequence_type(buffer[0]) {
+                    SequenceType::Single => {
+                        unsafe { Ok(transmute(buffer[0] as u32)) }
+                    }
+                    SequenceType::Pair => {
+                        let count = input.read(&mut buffer[1..2])
+                            .expect("failed to read sequence suffix");
+                        if count == 1 {
+                            unsafe {
+                                Ok(transmute(decode_pair!(&buffer[0..2])))
+                            }
+                        }else{
+                            end_of_input!()
+                        }
+                    }
+                    SequenceType::Triple => {
+                        let count = input.read(&mut buffer[1..3])
+                            .expect("failed to read sequence suffix");
+                        if count == 2 {
+                            unsafe {
+                                Ok(transmute(decode_triple!(&buffer[0..3])))
+                            }
+                        } else {
+                            end_of_input!()
+                        }
+                    }
+                    SequenceType::Quad => {
+                        let count = input.read(&mut buffer[1..4])
+                            .expect("failed to read sequence suffix");
+                        if count == 3 {
+                            unsafe {
+                                Ok(transmute(decode_quad!(&buffer[0..4])))
+                            }
+                        } else {
+                           end_of_input!()
+                        }
+                    }
+                    Unrecognised => {
+                        invalid_byte_sequence!()
+                    }
+                }
+            };
         }
-        decoder_error!(
-            DecoderErrorCode::InvalidByteSequence,
-            "failed to decode any valid UTF-8"
-        )
-    }
-
-    /// Attempt to read a single byte from the underlying stream
-    #[inline(always)]
-    fn next_packed_byte(&self) -> DecoderResult<u32> {
-        match self.input.borrow_mut().next() {
-            Some(result) => match result {
-                Ok(b) => Ok(b as u32),
-                Err(_) => decoder_error!(DecoderErrorCode::StreamFailure, "failed to read next byte"),
-            },
-            None => decoder_error!(DecoderErrorCode::EndOfInput, "no more bytes available"),
-        }
+        Ok('c')
     }
 }
 
-impl<Reader: Read> Iterator for Utf8Decoder<Reader> {
+impl<B: BufRead> Iterator for Utf8Decoder<B> {
     type Item = char;
     /// Decode the next character from the underlying stream
     fn next(&mut self) -> Option<Self::Item> {
@@ -140,24 +179,23 @@ impl<Reader: Read> Iterator for Utf8Decoder<Reader> {
 
 #[cfg(test)]
 mod tests {
-
-    use std::env;
     use std::fs::File;
     use std::io::BufReader;
+    use std::time::Instant;
+
     use crate::utf8::Utf8Decoder;
 
     fn fuzz_file() -> File {
-        let path = env::current_dir()
-            .unwrap()
-            .join("fixtures/fuzz.txt");
-        File::open(path).unwrap()
+        File::open("fixtures/fuzz.txt").unwrap()
     }
 
     #[test]
     fn can_create_from_array() {
         let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
         let reader = BufReader::new(buffer);
-        let _decoder = Utf8Decoder::new(reader);
+        let decoder = Utf8Decoder::new(reader);
+        let mut _count = 0;
+        while decoder.decode_next().is_ok() { _count += 1; }
     }
 
     #[test]
@@ -168,17 +206,21 @@ mod tests {
 
     #[test]
     fn pass_a_fuzz_test() {
+        let start = Instant::now();
         let reader = BufReader::new(fuzz_file());
         let decoder = Utf8Decoder::new(reader);
         let mut count = 0;
-        while decoder.decode_next().is_ok() { count+= 1 }
-        assert_eq!(count, 35283)
+        while decoder.decode_next().is_ok() { count += 1; }
+        assert_eq!(count, 35283);
+        println!("Decoded fuzz file in {:?}", start.elapsed());
     }
 
     #[test]
     fn should_be_an_iterator() {
-        let reader = BufReader::new( fuzz_file());
+        let start = Instant::now();
+        let reader = BufReader::new(fuzz_file());
         let decoder = Utf8Decoder::new(reader);
         assert_eq!(decoder.count(), 35283);
+        println!("Counted fuzz file in {:?}", start.elapsed());
     }
 }

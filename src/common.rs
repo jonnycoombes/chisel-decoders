@@ -42,3 +42,24 @@ macro_rules! decoder_error {
         })
     }
 }
+
+#[macro_export]
+macro_rules! end_of_input {
+    () => {
+        Err(DecoderError {
+            code: DecoderErrorCode::EndOfInput,
+            message: "end of input reached".into()
+        })
+    }
+}
+
+
+#[macro_export]
+macro_rules! invalid_byte_sequence {
+    () => {
+        Err(DecoderError {
+            code: DecoderErrorCode::InvalidByteSequence,
+            message: "invalid byte sequence".into()
+        })
+    }
+}
