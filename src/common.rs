@@ -36,10 +36,10 @@ impl Display for DecoderError {
 #[macro_export]
 macro_rules! decoder_error {
     ($code : expr, $msg : expr) => {
-        Err(DecoderError {
+        DecoderError {
             code: $code,
             message: $msg.into()
-        })
+        }
     }
 }
 

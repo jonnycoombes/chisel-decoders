@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::io::BufRead;
 use std::mem::transmute;
 
-use crate::{end_of_input, invalid_byte_sequence};
+use crate::{decoder_error, end_of_input, invalid_byte_sequence};
 use crate::common::*;
 use crate::utf8::SequenceType::Unrecognised;
 
@@ -125,21 +125,21 @@ impl<B: BufRead> Utf8Decoder<B> {
                     }
                     SequenceType::Pair => {
                         input.read_exact(&mut buffer[1..2])
-                            .expect("failed to read sequence suffix");
+                            .map_err(|_| decoder_error!(DecoderErrorCode::StreamFailure, "failed to read byte sequence suffix"))?;
                         unsafe {
                             Ok(transmute(decode_pair!(&buffer[0..2])))
                         }
                     }
                     SequenceType::Triple => {
                         input.read_exact(&mut buffer[1..3])
-                            .expect("failed to read sequence suffix");
+                            .map_err(|_| decoder_error!(DecoderErrorCode::StreamFailure, "failed to read byte sequence suffix"))?;
                         unsafe {
                             Ok(transmute(decode_triple!(&buffer[0..3])))
                         }
                     }
                     SequenceType::Quad => {
                         input.read_exact(&mut buffer[1..4])
-                            .expect("failed to read sequence suffix");
+                            .map_err(|_| decoder_error!(DecoderErrorCode::StreamFailure, "failed to read byte sequence suffix"))?;
                         unsafe {
                             Ok(transmute(decode_quad!(&buffer[0..4])))
                         }
