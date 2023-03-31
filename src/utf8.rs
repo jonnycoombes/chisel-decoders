@@ -32,7 +32,7 @@ const FOLLOWING_BYTE_MASK: u32 = 0b0011_1111;
 /// Convenience macro for some bit twiddlin'
 macro_rules! single_byte_sequence {
     ($byte : expr) => {
-        $byte >> 7 == 0b0000_0000
+        $byte >> 7 == 0
     };
 }
 
@@ -82,19 +82,21 @@ macro_rules! decode_quad {
 }
 
 /// Determine what kind of UTF-8 sequence we're dealing with
-#[inline(always)]
+#[inline]
 fn sequence_type(b: u8) -> SequenceType {
     if single_byte_sequence!(b) {
-        SequenceType::Single
-    } else if double_byte_sequence!(b) {
-        SequenceType::Pair
-    } else if triple_byte_sequence!(b) {
-        SequenceType::Triple
-    } else if quad_byte_sequence!(b) {
-        SequenceType::Quad
-    } else {
-        Unrecognised
+        return SequenceType::Single;
     }
+    if triple_byte_sequence!(b) {
+        return SequenceType::Triple;
+    }
+    if double_byte_sequence!(b) {
+        return SequenceType::Pair;
+    }
+    if quad_byte_sequence!(b) {
+        return SequenceType::Quad;
+    }
+    Unrecognised
 }
 
 /// A UTF-8 decoder, which is wrapped around a given [Read] instance.
