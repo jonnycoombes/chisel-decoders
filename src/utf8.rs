@@ -29,11 +29,11 @@ const QUAD_BYTE_MASK: u32 = 0b0000_0111;
 /// Mask for extracting 6 bits from following byte UTF-8 ssequences
 const FOLLOWING_BYTE_MASK: u32 = 0b0011_1111;
 
-/// Low bound for checking triples
-const TRIPLE_LOW_BOUND: u32 = 0xd800;
+/// Low bound for checking excluded triples
+const TRIPLE_EXCLUDED_LOW_BOUND: u32 = 0xd800;
 
-/// High bound for checking triples
-const TRIPLE_HIGH_BOUND: u32 = 0xdfff;
+/// High bound for checking excluded triples
+const TRIPLE_EXCLUDED_HIGH_BOUND: u32 = 0xdfff;
 
 /// High bound for checking quads
 const QUAD_HIGH_BOUND: u32 = 0x10ffff;
@@ -146,7 +146,7 @@ impl<B: BufRead> Utf8Decoder<B> {
                             .map_err(|_| decoder_error!(DecoderErrorCode::StreamFailure, "failed to read byte sequence suffix"))?;
                         unsafe {
                             let value = decode_triple!(&buffer[0..3]);
-                            if (TRIPLE_LOW_BOUND..=TRIPLE_HIGH_BOUND).contains(&value) {
+                            if (TRIPLE_EXCLUDED_LOW_BOUND..=TRIPLE_EXCLUDED_HIGH_BOUND).contains(&value) {
                                 Err(decoder_error!(DecoderErrorCode::InvalidByteSequence, "value falls within forbidden range [0xd800, 0xdfff]"))
                             }else {
                                 Ok(transmute(value))
