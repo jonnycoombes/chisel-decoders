@@ -2,30 +2,39 @@ use std::fs::File;
 use std::io::BufReader;
 use criterion::{criterion_group, criterion_main, Criterion};
 use chisel_decoders::utf8::Utf8Decoder;
+use pprof::criterion::{Output, PProfProfiler};
 
 macro_rules! build_decode_benchmark {
     ($func : tt, $filename : expr) => {
         fn $func() {
-            let f = File::open(format!("fixtures/{}", $filename)).unwrap();
+            let f = File::open(format!("fixtures/json/bench/{}.json", $filename)).unwrap();
             let reader = BufReader::new(f);
-            let decoder = Utf8Decoder::new(reader);
+            let mut decoder = Utf8Decoder::new(reader);
             let mut _count = 0;
             while decoder.decode_next().is_ok() { _count+= 1}
         }
     };
 }
 
-build_decode_benchmark!(fuzz, "fuzz.txt");
-build_decode_benchmark!(twitter, "twitter.json");
+build_decode_benchmark!(canada, "canada");
+build_decode_benchmark!(twitter, "twitter");
+build_decode_benchmark!(citm_catalog, "citm_catalog");
 
-
-
-fn benchmark_fuzz(c: &mut Criterion) {
-    c.bench_function("decode utf-8 fuzz file", |b| b.iter(fuzz));
+fn benchmark_canada(c: &mut Criterion) {
+    c.bench_function("decode canada.json file", |b| b.iter(canada));
 }
+
 fn benchmark_twitter(c: &mut Criterion) {
-    c.bench_function("decode sample twitter json", |b| b.iter(twitter));
+    c.bench_function("decode twitter.json file", |b| b.iter(twitter));
 }
 
-criterion_group!(benches, benchmark_twitter, benchmark_fuzz);
+fn benchmark_citm_catalog(c: &mut Criterion) {
+    c.bench_function("decode citm_catalog.json file", |b| b.iter(citm_catalog));
+}
+criterion_group! {
+    name=benches;
+    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+    targets= benchmark_twitter, benchmark_canada, benchmark_citm_catalog
+}
+
 criterion_main!(benches);

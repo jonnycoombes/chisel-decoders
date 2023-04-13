@@ -1,10 +1,10 @@
 [package]
 name = "chisel-decoders"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Jonny Coombes <jcoombes@jcs-software.co.uk>"]
 rust-version = "1.56"
-description = "Simple and relatively fast UTF-8 byte stream decoder"
+description = "Simple UTF-8 byte stream decoder"
 license = "MIT OR Apache-2.0"
 keywords = ["utf8", "decoder"]
 categories = ["encoding", "text-processing"]
@@ -13,7 +13,8 @@ repository = "https://github.com/jonnycoombes/chisel-decoders"
 [dependencies]
 
 [dev-dependencies]
-criterion = "0.4.0"
+criterion = {version ="0.4.0", features = ["html_reports"]}
+pprof = {version = "0.11.1", features = ["flamegraph", "criterion", "protobuf"]}
 
 [[bench]]
 name = "decoding"
