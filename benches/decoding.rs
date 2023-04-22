@@ -1,17 +1,19 @@
+use chisel_decoders::utf8::Utf8Decoder;
+use criterion::{criterion_group, criterion_main, Criterion};
+use pprof::criterion::{Output, PProfProfiler};
 use std::fs::File;
 use std::io::BufReader;
-use criterion::{criterion_group, criterion_main, Criterion};
-use chisel_decoders::utf8::Utf8Decoder;
-use pprof::criterion::{Output, PProfProfiler};
 
 macro_rules! build_decode_benchmark {
     ($func : tt, $filename : expr) => {
         fn $func() {
             let f = File::open(format!("fixtures/json/bench/{}.json", $filename)).unwrap();
-            let reader = BufReader::new(f);
-            let mut decoder = Utf8Decoder::new(reader);
+            let mut reader = BufReader::new(f);
+            let mut decoder = Utf8Decoder::new(&mut reader);
             let mut _count = 0;
-            while decoder.decode_next().is_ok() { _count+= 1}
+            while decoder.decode_next().is_ok() {
+                _count += 1
+            }
         }
     };
 }
