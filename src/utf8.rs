@@ -5,9 +5,9 @@
 use std::io::BufRead;
 use std::mem::transmute;
 
-use crate::{decoder_error,  invalid_byte_sequence};
 use crate::common::*;
 use crate::utf8::SequenceType::Unrecognised;
+use crate::{decoder_error, invalid_byte_sequence};
 
 enum SequenceType {
     Single,
@@ -67,26 +67,25 @@ macro_rules! quad_byte_sequence {
 
 macro_rules! decode_pair {
     ($buf : expr) => {
-        ($buf[1] as u32 & FOLLOWING_BYTE_MASK)
-        | (($buf[0] as u32 & DOUBLE_BYTE_MASK) << 6)
-    }
+        ($buf[1] as u32 & FOLLOWING_BYTE_MASK) | (($buf[0] as u32 & DOUBLE_BYTE_MASK) << 6)
+    };
 }
 
 macro_rules! decode_triple {
     ($buf : expr) => {
         ($buf[2] as u32 & FOLLOWING_BYTE_MASK)
-        | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 6)
-        | (($buf[0] as u32 & TRIPLE_BYTE_MASK) << 12)
-    }
+            | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 6)
+            | (($buf[0] as u32 & TRIPLE_BYTE_MASK) << 12)
+    };
 }
 
 macro_rules! decode_quad {
     ($buf : expr) => {
         ($buf[3] as u32 & FOLLOWING_BYTE_MASK)
-        | (($buf[2] as u32 & FOLLOWING_BYTE_MASK) << 6)
-        | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 12)
-        | (($buf[0] as u32 & QUAD_BYTE_MASK) << 18)
-    }
+            | (($buf[2] as u32 & FOLLOWING_BYTE_MASK) << 6)
+            | (($buf[1] as u32 & FOLLOWING_BYTE_MASK) << 12)
+            | (($buf[0] as u32 & QUAD_BYTE_MASK) << 18)
+    };
 }
 
 /// Determine what kind of UTF-8 sequence we're dealing with
@@ -107,85 +106,89 @@ fn sequence_type(b: u8) -> SequenceType {
     Unrecognised
 }
 
-/// A UTF-8 decoder, which is wrapped around a given [Read] instance.
-/// The lifetime of the reader instance must be at least as long as the decoder
-pub struct Utf8Decoder<B: BufRead> {
+/// A UTF-8 decoder, which takes a ref to a [BufRead] instance.
+pub struct Utf8Decoder<'a, B: BufRead> {
     /// The input stream
-    input: B,
+    input: &'a mut B,
     /// Staging buffer
-    buffer : Vec<u8>,
-    init : bool,
-    index : usize
+    buffer: Vec<u8>,
+    init: bool,
+    index: usize,
 }
 
-impl<B: BufRead> Utf8Decoder<B> {
+impl<'a, Buffer: BufRead> Utf8Decoder<'a, Buffer> {
     /// Create a new decoder with a default buffer size
-    pub fn new(r: B) -> Self {
+    pub fn new(r: &'a mut Buffer) -> Self {
         Utf8Decoder {
             input: r,
-            buffer : vec!(),
-            init : false,
-            index : 0
+            buffer: vec![],
+            init: false,
+            index: 0,
         }
     }
 
     fn init(&mut self) -> DecoderResult<()> {
-        match self.input.read_to_end(&mut self.buffer){
+        match self.input.read_to_end(&mut self.buffer) {
             Ok(_) => {
-                self.init= true;
+                self.init = true;
                 Ok(())
-            },
-            Err(_) => Err(decoder_error!(DecoderErrorCode::StreamFailure, "failed to read input"))
+            }
+            Err(_) => Err(decoder_error!(
+                DecoderErrorCode::StreamFailure,
+                "failed to read input"
+            )),
         }
     }
 
     /// Attempt to decode the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
     pub fn decode_next(&mut self) -> DecoderResult<char> {
-
         if !self.init {
             self.init()?;
         }
 
         if self.index >= self.buffer.len() {
-            return Err(decoder_error!(DecoderErrorCode::EndOfInput, "end of input reached"))
+            return Err(decoder_error!(
+                DecoderErrorCode::EndOfInput,
+                "end of input reached"
+            ));
         }
 
         match sequence_type(self.buffer[self.index]) {
-            SequenceType::Single => {
-                unsafe {
-                    self.index+= 1;
-                    Ok(transmute(self.buffer[self.index - 1] as u32))
+            SequenceType::Single => unsafe {
+                self.index += 1;
+                Ok(transmute(self.buffer[self.index - 1] as u32))
+            },
+            SequenceType::Pair => unsafe {
+                self.index += 2;
+                Ok(transmute(decode_pair!(
+                    &self.buffer[self.index - 2..self.index]
+                )))
+            },
+            SequenceType::Triple => unsafe {
+                self.index += 3;
+                let value = decode_triple!(&self.buffer[self.index - 3..self.index]);
+                if (TRIPLE_EXCLUDED_LOW_BOUND..=TRIPLE_EXCLUDED_HIGH_BOUND).contains(&value) {
+                    Err(decoder_error!(
+                        DecoderErrorCode::InvalidByteSequence,
+                        "value falls within forbidden range [0xd800, 0xdfff]"
+                    ))
+                } else {
+                    Ok(transmute(value))
                 }
-            }
-            SequenceType::Pair => {
-                unsafe {
-                    self.index+= 2;
-                    Ok(transmute(decode_pair!(&self.buffer[self.index-2..self.index])))
+            },
+            SequenceType::Quad => unsafe {
+                self.index += 4;
+                let value = decode_quad!(&self.buffer[self.index - 4..self.index]);
+                if value > QUAD_HIGH_BOUND {
+                    Err(decoder_error!(
+                        DecoderErrorCode::InvalidByteSequence,
+                        "value falls outside maximum bound 0x10ffff"
+                    ))
+                } else {
+                    Ok(transmute(value))
                 }
-            }
-            SequenceType::Triple => {
-                unsafe {
-                    self.index+= 3;
-                    let value = decode_triple!(&self.buffer[self.index-3..self.index]);
-                    if (TRIPLE_EXCLUDED_LOW_BOUND..=TRIPLE_EXCLUDED_HIGH_BOUND).contains(&value) {
-                        Err(decoder_error!(DecoderErrorCode::InvalidByteSequence, "value falls within forbidden range [0xd800, 0xdfff]"))
-                    }else {
-                        Ok(transmute(value))
-                    }
-                }
-            }
-            SequenceType::Quad => {
-                unsafe {
-                    self.index+= 4;
-                    let value = decode_quad!(&self.buffer[self.index-4..self.index]);
-                    if value > QUAD_HIGH_BOUND {
-                        Err(decoder_error!(DecoderErrorCode::InvalidByteSequence, "value falls outside maximum bound 0x10ffff"))
-                    }else {
-                        Ok(transmute(value))
-                    }
-                }
-            }
+            },
             Unrecognised => {
                 invalid_byte_sequence!()
             }
@@ -193,7 +196,7 @@ impl<B: BufRead> Utf8Decoder<B> {
     }
 }
 
-impl<B: BufRead> Iterator for Utf8Decoder<B> {
+impl<'a, B: BufRead> Iterator for Utf8Decoder<'a, B> {
     type Item = char;
     /// Decode the next character from the underlying stream
     fn next(&mut self) -> Option<Self::Item> {
@@ -216,48 +219,56 @@ mod tests {
         File::open("fixtures/fuzz.txt").unwrap()
     }
 
-    fn complex_file() -> File { File::open("fixtures/twitter.json").unwrap() }
+    fn complex_file() -> File {
+        File::open("fixtures/twitter.json").unwrap()
+    }
 
     #[test]
     fn can_create_from_array() {
         let buffer: &[u8] = &[0x10, 0x12, 0x23, 0x12];
-        let reader = BufReader::new(buffer);
-        let mut decoder = Utf8Decoder::new(reader);
+        let mut reader = BufReader::new(buffer);
+        let mut decoder = Utf8Decoder::new(&mut reader);
         let mut _count = 0;
-        while decoder.decode_next().is_ok() { _count += 1; }
+        while decoder.decode_next().is_ok() {
+            _count += 1;
+        }
     }
 
     #[test]
     fn can_create_from_file() {
-        let reader = BufReader::new(fuzz_file());
-        let _decoder = Utf8Decoder::new(reader);
+        let mut reader = BufReader::new(fuzz_file());
+        let _decoder = Utf8Decoder::new(&mut reader);
     }
 
     #[test]
     fn pass_a_fuzz_test() {
         let start = Instant::now();
-        let reader = BufReader::new(fuzz_file());
-        let mut decoder = Utf8Decoder::new(reader);
+        let mut reader = BufReader::new(fuzz_file());
+        let mut decoder = Utf8Decoder::new(&mut reader);
         let mut count = 0;
-        while decoder.decode_next().is_ok() { count += 1; }
+        while decoder.decode_next().is_ok() {
+            count += 1;
+        }
         assert_eq!(count, 35283);
         println!("Decoded fuzz file in {:?}", start.elapsed());
     }
 
     #[test]
     fn decode_a_complex_document() {
-        let reader = BufReader::new(complex_file());
-        let mut decoder = Utf8Decoder::new(reader);
+        let mut reader = BufReader::new(complex_file());
+        let mut decoder = Utf8Decoder::new(&mut reader);
         let mut count = 0;
-        while decoder.decode_next().is_ok() { count += 1; }
+        while decoder.decode_next().is_ok() {
+            count += 1;
+        }
         assert_eq!(count, 567916);
     }
 
     #[test]
     fn should_be_an_iterator() {
         let start = Instant::now();
-        let reader = BufReader::new(fuzz_file());
-        let decoder = Utf8Decoder::new(reader);
+        let mut reader = BufReader::new(fuzz_file());
+        let decoder = Utf8Decoder::new(&mut reader);
         assert_eq!(decoder.count(), 35283);
         println!("Counted fuzz file in {:?}", start.elapsed());
     }
