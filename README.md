@@ -90,8 +90,12 @@ Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
 ```
 
 
-Current version: 1.0.2
+## Building and Testing
 
-Some additional info here
+As you would expect, just `cargo build` in order to build the crate.
 
-License: MIT OR Apache-2.0
+## Suggestions and Requests
+
+If you have any suggestions, requests or even just comments relating to this crate, then please just add an issue and
+I'll try and take a look when I get change.  Please feel free to fork this repo if you want to utilise/modify this code
+in any of your own work.
