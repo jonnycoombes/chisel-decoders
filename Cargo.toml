@@ -1,6 +1,6 @@
 [package]
 name = "chisel-decoders"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2021"
 authors = ["Jonny Coombes <jcoombes@jcs-software.co.uk>"]
 rust-version = "1.56"
@@ -17,7 +17,11 @@ criterion = {version ="0.4.0", features = ["html_reports"]}
 pprof = {version = "0.11.1", features = ["flamegraph", "criterion", "protobuf"]}
 
 [[bench]]
-name = "decoding"
+name = "native_decoding"
+harness = false
+
+[[bench]]
+name = "iter_decoding"
 harness = false
 
 [features]

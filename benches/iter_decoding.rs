@@ -11,8 +11,8 @@ macro_rules! build_decode_benchmark {
             let mut reader = BufReader::new(f);
             let mut decoder = Utf8Decoder::new(&mut reader);
             let mut _count = 0;
-            while decoder.decode_next().is_ok() {
-                _count += 1
+            while let Some(_) = decoder.next() {
+                _count += 1;
             }
         }
     };
@@ -23,20 +23,22 @@ build_decode_benchmark!(twitter, "twitter");
 build_decode_benchmark!(citm_catalog, "citm_catalog");
 
 fn benchmark_canada(c: &mut Criterion) {
-    c.bench_function("decode canada.json file", |b| b.iter(canada));
+    c.bench_function("iter decode canada.json file", |b| b.iter(canada));
 }
 
 fn benchmark_twitter(c: &mut Criterion) {
-    c.bench_function("decode twitter.json file", |b| b.iter(twitter));
+    c.bench_function("iter decode twitter.json file", |b| b.iter(twitter));
 }
 
 fn benchmark_citm_catalog(c: &mut Criterion) {
-    c.bench_function("decode citm_catalog.json file", |b| b.iter(citm_catalog));
+    c.bench_function("iter decode citm_catalog.json file", |b| {
+        b.iter(citm_catalog)
+    });
 }
 criterion_group! {
-    name=benches;
+    name=iter_benches;
     config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
     targets= benchmark_twitter, benchmark_canada, benchmark_citm_catalog
 }
 
-criterion_main!(benches);
+criterion_main!(iter_benches);
