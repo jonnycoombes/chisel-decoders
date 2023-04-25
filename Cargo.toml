@@ -20,4 +20,8 @@ pprof = {version = "0.11.1", features = ["flamegraph", "criterion", "protobuf"]}
 name = "utf8_decoding"
 harness = false
 
+[[bench]]
+name = "ascii_decoding"
+harness = false
+
 [features]
