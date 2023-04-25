@@ -142,7 +142,7 @@ impl<'a, Buffer: BufRead> Utf8Decoder<'a, Buffer> {
 
     /// Attempt to decode the next character in the underlying stream. Assumes the maximum
     /// number of unicode bytes is 4 *not* 6
-    pub fn decode_next(&mut self) -> DecoderResult<char> {
+    fn decode_next(&mut self) -> DecoderResult<char> {
         if !self.init {
             self.init()?;
         }

@@ -5,10 +5,10 @@
 //! ongoing toy parser project, and is used as the first stage of the scanning/lexing phase of the parser in order avoid
 //! unnecessary allocations during the `u8` sequence -> `char` conversion.
 //!
-//! Note that the implementation is pretty fast and loose, and under the covers utilises some bit-twiddlin' in conjunction
-//! with the *unsafe* `transmute` function to do the conversions. *No string allocations are used during conversion*.
-//! There is minimal checking (other than bit-masking) of the inbound bytes - it is not intended to be a full-blown UTF8
-//! validation library, although improved/feature-flagged validation may be added at a later date.
+//! Note that the implementation is pretty fast and loose, and under the covers utilises some bit-twiddlin' in
+//! conjunction with the *unsafe* `transmute` function to do the conversions. *No string allocations are used during
+//! conversion*. There is minimal checking (other than bit-masking) of the inbound bytes - it is not intended to be
+//! a full-blown UTF8 validation library, although improved/feature-flagged validation may be added at a later date.
 //!
 //! ### Usage
 //!
@@ -42,28 +42,10 @@
 //!     let mut reader = BufReader::new(f.unwrap());
 //!     let _decoder = Utf8Decoder::new(&mut reader);
 //! ```
-//! ### Consuming `char`s
+//! ### Consuming Decoded `chars`
 //!
-//! You can either pull out new `char`s from the decoder wrapped inside a `Result` type:
-//!
-//! ```rust
-//!     # use std::fs::File;
-//!     # use std::io::BufReader;
-//!     # use std::path::PathBuf;
-//!     # use chisel_decoders::utf8::Utf8Decoder;
-//!
-//!     let path = PathBuf::from("./Cargo.toml");
-//!     let f = File::open(path);
-//!     let mut reader = BufReader::new(f.unwrap());
-//!     let mut decoder = Utf8Decoder::new(&mut reader);
-//!     loop {
-//!         let result = decoder.decode_next();
-//!         if result.is_err() {
-//!             break;
-//!         }
-//!     }
-//! ```
-//! Alternatively, you can just use the `Utf8Decoder` as an `Iterator`:
+//! Once you've created an instance of a specific decoder, you simply iterate over the `chars` in
+//! order to pull out the decoded characters (a decoder implements `Iterator<Item=char>`):
 //!
 //! ```rust
 //!     # use std::fs::File;
