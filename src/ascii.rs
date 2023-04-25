@@ -58,15 +58,16 @@ impl<'a, Buffer: BufRead> AsciiDecoder<'a, Buffer> {
             ));
         }
 
-        match self.buffer[self.index] {
-            0x0..=0x7f => unsafe {
+        if self.buffer[self.index] >> 7 == 0 {
+            return unsafe {
                 self.index += 1;
                 Ok(transmute(self.buffer[self.index - 1] as u32))
-            },
-            _ => Err(decoder_error!(
+            };
+        } else {
+            return Err(decoder_error!(
                 DecoderErrorCode::OutOfRange,
                 "non-ascii character detected"
-            )),
+            ));
         }
     }
 }
