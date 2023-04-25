@@ -6,7 +6,7 @@ authors = ["Jonny Coombes <jcoombes@jcs-software.co.uk>"]
 rust-version = "1.56"
 description = "Simple UTF-8 byte stream decoder"
 license = "MIT OR Apache-2.0"
-keywords = ["utf8", "decoder"]
+keywords = ["ascii", "utf8", "decoder"]
 categories = ["encoding", "text-processing"]
 repository = "https://github.com/jonnycoombes/chisel-decoders"
 
