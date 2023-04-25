@@ -6,12 +6,14 @@ use std::fmt::{Debug, Display, Formatter};
 pub type DecoderResult<T> = Result<T, DecoderError>;
 
 /// Enumeration of different decoder errors
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum DecoderErrorCode {
     /// Something went pear-shaped in the underlying stream
     StreamFailure,
     /// Detected an invalid byte sequence
     InvalidByteSequence,
+    /// Out of range error
+    OutOfRange,
     /// The end of the input has been reached
     EndOfInput,
 }
@@ -38,9 +40,9 @@ macro_rules! decoder_error {
     ($code : expr, $msg : expr) => {
         DecoderError {
             code: $code,
-            message: $msg.into()
+            message: $msg.into(),
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -48,18 +50,17 @@ macro_rules! end_of_input {
     () => {
         Err(DecoderError {
             code: DecoderErrorCode::EndOfInput,
-            message: "end of input reached".into()
+            message: "end of input reached".into(),
         })
-    }
+    };
 }
-
 
 #[macro_export]
 macro_rules! invalid_byte_sequence {
     () => {
         Err(DecoderError {
             code: DecoderErrorCode::InvalidByteSequence,
-            message: "invalid byte sequence".into()
+            message: "invalid byte sequence".into(),
         })
-    }
+    };
 }
