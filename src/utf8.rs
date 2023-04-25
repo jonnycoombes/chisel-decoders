@@ -170,7 +170,7 @@ impl<'a, Buffer: BufRead> Utf8Decoder<'a, Buffer> {
                 let value = decode_triple!(&self.buffer[self.index - 3..self.index]);
                 if (TRIPLE_EXCLUDED_LOW_BOUND..=TRIPLE_EXCLUDED_HIGH_BOUND).contains(&value) {
                     Err(decoder_error!(
-                        DecoderErrorCode::InvalidByteSequence,
+                        DecoderErrorCode::OutOfRange,
                         "value falls within forbidden range [0xd800, 0xdfff]"
                     ))
                 } else {
@@ -182,7 +182,7 @@ impl<'a, Buffer: BufRead> Utf8Decoder<'a, Buffer> {
                 let value = decode_quad!(&self.buffer[self.index - 4..self.index]);
                 if value > QUAD_HIGH_BOUND {
                     Err(decoder_error!(
-                        DecoderErrorCode::InvalidByteSequence,
+                        DecoderErrorCode::OutOfRange,
                         "value falls outside maximum bound 0x10ffff"
                     ))
                 } else {
