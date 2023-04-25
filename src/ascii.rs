@@ -95,10 +95,10 @@ mod tests {
         File::open("fixtures/fuzz.txt").unwrap()
     }
     fn ascii_fuzz_file() -> File {
-        File::open("fixtures/json/bench/asciiart.json").unwrap()
+        File::open("fixtures/json/bench/ascii/asciiart.json").unwrap()
     }
     fn complex_file() -> File {
-        File::open("fixtures/json/bench/twitter.json").unwrap()
+        File::open("fixtures/json/bench/utf8/twitter.json").unwrap()
     }
 
     #[test]
