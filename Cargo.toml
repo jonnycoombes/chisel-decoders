@@ -17,10 +17,7 @@ criterion = {version ="0.4.0", features = ["html_reports"]}
 pprof = {version = "0.11.1", features = ["flamegraph", "criterion", "protobuf"]}
 
 [[bench]]
-name = "iter_decoding"
+name = "utf8_decoding"
 harness = false
 
 [features]
-
-[badges]
-github = { repository = "https://github.com/jonnycoombes/chisel-decoders" }
