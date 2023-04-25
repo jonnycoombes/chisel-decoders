@@ -220,7 +220,7 @@ mod tests {
     }
 
     fn complex_file() -> File {
-        File::open("fixtures/twitter.json").unwrap()
+        File::open("fixtures/json/bench/utf8/twitter.json").unwrap()
     }
 
     #[test]
