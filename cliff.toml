@@ -8,7 +8,7 @@
 [changelog]
 # changelog header
 header = """
-# Changelog - Chisel\n
+# Changelog - chisel-decoders\n
 All the most recent changes are summarised and grouped below:\n
 >>>>>>> 88e73ad (wip: added git cliff configuration)
 """
@@ -49,19 +49,12 @@ commit_preprocessors = [
 commit_parsers = [
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
-<<<<<<< HEAD
   { message = "^wip", group = "WorkInProgress" },
-=======
->>>>>>> 88e73ad (wip: added git cliff configuration)
   { message = "^doc", group = "Documentation" },
   { message = "^perf", group = "Performance" },
   { message = "^refactor", group = "Refactor" },
   { message = "^style", group = "Styling" },
   { message = "^test", group = "Testing" },
-<<<<<<< HEAD
-=======
-  { message = "^wip", group = "WorkInProgress"},
->>>>>>> 88e73ad (wip: added git cliff configuration)
   { message = "^chore\\(release\\): prepare for", skip = true },
   { message = "^chore", group = "Miscellaneous Tasks" },
   { body = ".*security", group = "Security" },
